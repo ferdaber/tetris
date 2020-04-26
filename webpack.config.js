@@ -1,9 +1,7 @@
 const path = require("path");
 const webpack = require("webpack");
 const MiniCssExtractPlugin = require("mini-css-extract-plugin");
-
-const dev =
-  process.env.NODE_ENV == null || process.env.NODE_ENV === "development";
+const dev = require("./env");
 const publicPath = "/";
 const buildDir = path.resolve("dist");
 const srcDir = path.resolve("src");
@@ -67,6 +65,9 @@ module.exports = /** @type {import('webpack').Configuration} */ ({
                 },
               },
               {
+                // parses and pre-evaluates CSS-in-JS
+                // and creates a .css file out of it,
+                // needs loaders for .css files below
                 loader: "linaria/loader",
                 options: {
                   sourceMap: dev,
@@ -79,6 +80,9 @@ module.exports = /** @type {import('webpack').Configuration} */ ({
             use: [
               {
                 loader: MiniCssExtractPlugin.loader,
+                options: {
+                  sourceMap: dev,
+                },
               },
               {
                 loader: "css-loader",

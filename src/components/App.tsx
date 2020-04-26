@@ -3,7 +3,7 @@ import { css } from "linaria";
 
 const styles = {
   container: css`
-    color: red;
+    color: slategray;
   `,
 };
 
