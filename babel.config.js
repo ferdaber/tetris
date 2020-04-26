@@ -19,10 +19,9 @@ module.exports = {
     ],
     "@babel/preset-react",
     "@babel/preset-typescript",
-    "@emotion/babel-preset-css-prop",
+    "linaria/babel",
   ],
   plugins: [
-    "babel-plugin-emotion",
     "@babel/plugin-proposal-numeric-separator",
     [
       "@babel/plugin-proposal-class-properties",

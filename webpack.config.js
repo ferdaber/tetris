@@ -50,22 +50,29 @@ module.exports = /** @type {import('webpack').Configuration} */ ({
           {
             resource: {
               test: /\.[tj]sx?$/,
+              exclude: /node_modules/,
             },
-            loader: "babel-loader",
-            options: {
-              extends: "./babel.config.js",
-              // emit source maps
-              sourceMaps: true,
-              // creates a cache directory (babel-loader ONLY)
-              cacheDirectory: true,
-              // minify and cache the minification step in PROD
-              compact: !dev,
-              cacheCompression: !dev,
-            },
-          },
-          {
-            test: /\.(glsl|css)$/,
-            loader: "raw-loader",
+            use: [
+              {
+                loader: "babel-loader",
+                options: {
+                  extends: "./babel.config.js",
+                  // emit source maps
+                  sourceMaps: true,
+                  // creates a cache directory (babel-loader ONLY)
+                  cacheDirectory: true,
+                  // minify and cache the minification step in PROD
+                  compact: !dev,
+                  cacheCompression: !dev,
+                },
+              },
+              {
+                loader: "linaria/loader",
+                options: {
+                  sourceMap: dev,
+                },
+              },
+            ],
           },
           {
             test: /\.s?css$/,
@@ -75,9 +82,15 @@ module.exports = /** @type {import('webpack').Configuration} */ ({
               },
               {
                 loader: "css-loader",
+                options: {
+                  sourceMap: dev,
+                },
               },
               {
                 loader: "sass-loader",
+                options: {
+                  sourceMap: dev,
+                },
               },
             ],
           },
@@ -136,7 +149,15 @@ module.exports = /** @type {import('webpack').Configuration} */ ({
         ignore: ["index.ejs"],
       },
     ]),
-    new MiniCssExtractPlugin(),
+    new MiniCssExtractPlugin({
+      // filename is the template for entry points
+      // chunk is the template for generated (split) assets from the entry point
+      // they don't really have any meaningful differences for consumers, as long as their names don't collide
+      filename: dev ? "css/[name].css" : "css/[name].[chunkhash:6].css",
+      chunkFilename: dev
+        ? "css/[name].chunk.css"
+        : "css/[name].[chunkhash:6].chunk.css",
+    }),
   ],
   optimization: {
     minimize: !dev,
