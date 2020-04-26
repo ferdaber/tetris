@@ -17,7 +17,8 @@
     "moduleResolution": "node",
     "resolveJsonModule": true,
     "noEmit": true,
-    "suppressImplicitAnyIndexErrors": true
+    "suppressImplicitAnyIndexErrors": true,
+    "sourceMap": true
   },
   "include": ["src"]
 }
