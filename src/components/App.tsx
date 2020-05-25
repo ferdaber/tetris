@@ -170,7 +170,7 @@ const App = () => {
                     key={gridY}
                     style={isOccupied ? { background: "gray" } : undefined}
                   >
-                    {gridY}
+                    ({gridX},{gridY})
                   </div>
                 );
               })}
