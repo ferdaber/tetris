@@ -1,27 +1,15 @@
-export {};
-
-//Enum for Tetromino Type
-export enum TetroType {
-  Line,
-  Snake,
-  Square,
-  Tee,
-  Leg,
-  ReverseLeg,
-  ReverseSnake,
-}
-
-//Interface for Tertomino - Tetro for short
-export interface Tetro {
-  type: TetroType;
-  coords: [number, number][];
-}
-
-//Type for Tetromino Coords
-export type TetroCoords = [number, number][];
+import {
+  TetroType,
+  TetroCoords,
+  Tetro,
+  rotationOrigins,
+  Grid,
+  MoveType,
+  moveDeltas,
+} from "../templates/Tetromino";
 
 //Generate Tetromino
-export function generateDefaultTetromino(type: TetroType) {
+export function generateDefaultTetromino(type: TetroType, color: string) {
   let startingCoords: TetroCoords | [] = [];
   if (type === TetroType.Line) {
     startingCoords = [
@@ -76,21 +64,26 @@ export function generateDefaultTetromino(type: TetroType) {
   let newTetro: Tetro = {
     type,
     coords: startingCoords,
+    color,
   };
   return newTetro;
 }
 
-//Each shape has a origin block inside of it coordinates which changes depending on shape.
-//Created a Record type that maps the TetroType to an origin
-export const rotationOrigins = {
-  [TetroType.Line]: 1,
-  [TetroType.Snake]: 1,
-  [TetroType.Square]: 0,
-  [TetroType.Tee]: 1,
-  [TetroType.Leg]: 2,
-  [TetroType.ReverseLeg]: 2,
-  [TetroType.ReverseSnake]: 1,
-} as Record<TetroType, number>;
+///Returns news coords for directional movement
+export const moveTetro = (
+  coords: [number, number][],
+  moveType: MoveType,
+  moveAmount = 1
+) => {
+  return coords.map(([x, y]) => {
+    // get deltas of move type
+
+    const [dx, dy] = moveDeltas[moveType];
+
+    // return deltas + coord of each tetromino to get new coords
+    return [x + dx * moveAmount, y + dy * moveAmount] as [number, number]; //ask ferdy about this again
+  });
+};
 
 /** Rotate tetromino 90 degrees clockwise */
 export function rotateTetromino(tetro: Tetro) {
@@ -120,3 +113,42 @@ export function checkMove(coords: [number, number][], grid: number[][]) {
   });
   return numOutOfBounds;
 }
+
+///Find direction tetromino needs to shift if it rotates out of the bounds of the grid
+export const getDirectionShift = (coords: [number, number][]) => {
+  for (let i = 0; i < coords.length; i++) {
+    if (coords[i][0] < 0) return "down";
+    else if (coords[i][0] > 19) return "up";
+    else if (coords[i][1] < 0) return "right";
+    else if (coords[i][1] > 9) return "left";
+  }
+  return "none";
+};
+
+export const checkGrid: (
+  grid: Grid,
+  level: number
+) => [Grid, number, number] = (grid, level) => {
+  let completedRows = 0;
+  let previousGrid = grid.filter((row) => {
+    if (!row.every((matrix) => Boolean(matrix))) {
+      return row;
+    } else {
+      completedRows++;
+    }
+  });
+  const scoreSystem = {
+    1: 40,
+    2: 100,
+    3: 300,
+    4: 1200,
+  };
+  let newGrid = Array.from({ length: completedRows }, () =>
+    Array(10).fill(0)
+  ).concat(previousGrid);
+  let newScore =
+    completedRows > 3
+      ? scoreSystem[4] * (level + 1)
+      : scoreSystem[completedRows] * (level + 1);
+  return [newGrid, newScore, completedRows];
+};

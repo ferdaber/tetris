@@ -1,4 +1,4 @@
-import { css, styled } from "linaria";
+import { css } from "linaria";
 
 export default {
   gameContainer: css`
@@ -32,58 +32,57 @@ export default {
     }
     .line {
       > div:nth-child(n + 5) {
-        background: blue;
       }
       > div:nth-child(-n + 4) {
         height: 0;
       }
     }
     .snake {
-      div:nth-child(5),
-      div:nth-child(6),
-      div:nth-child(2),
-      div:nth-child(3) {
-        background: red;
+      div:nth-child(7),
+      div:nth-child(8),
+      div:nth-child(1),
+      div:nth-child(4) {
+        background-color: transparent !important;
       }
     }
     .square {
-      div:nth-child(2),
-      div:nth-child(3),
-      div:nth-child(6),
-      div:nth-child(7) {
-        background: yellow;
+      div:nth-child(1),
+      div:nth-child(5),
+      div:nth-child(4),
+      div:nth-child(8) {
+        background-color: transparent !important;
       }
     }
     .tee {
-      div:nth-child(1),
-      div:nth-child(2),
-      div:nth-child(3),
-      div:nth-child(6) {
-        background: purple;
+      div:nth-child(4),
+      div:nth-child(5),
+      div:nth-child(7),
+      div:nth-child(8) {
+        background-color: transparent !important;
       }
     }
     .leg {
-      div:nth-child(1),
-      div:nth-child(2),
-      div:nth-child(3),
-      div:nth-child(7) {
-        background: orange;
+      div:nth-child(4),
+      div:nth-child(5),
+      div:nth-child(6),
+      div:nth-child(8) {
+        background-color: transparent !important;
       }
     }
     .reverseleg {
-      div:nth-child(5),
-      div:nth-child(6),
-      div:nth-child(7),
-      div:nth-child(3) {
-        background: green;
+      div:nth-child(1),
+      div:nth-child(2),
+      div:nth-child(4),
+      div:nth-child(8) {
+        background-color: transparent !important;
       }
     }
     .reversesnake {
-      div:nth-child(1),
-      div:nth-child(2),
-      div:nth-child(6),
-      div:nth-child(7) {
-        background: blue;
+      div:nth-child(3),
+      div:nth-child(4),
+      div:nth-child(5),
+      div:nth-child(8) {
+        background-color: transparent !important;
       }
     }
   `,
@@ -99,6 +98,17 @@ export default {
     height: 800px;
     border: 1px solid black;
     margin: 0;
+    &.off {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      button {
+        font-size: 36px;
+        &:hover {
+          letter-spacing: 0.15em;
+        }
+      }
+    }
   `,
   row: css`
     display: flex;
@@ -119,6 +129,27 @@ export default {
     left: 50%;
     top: 50%;
     transform: translate(-50%, -50%);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    height: 500px;
+    p {
+      font-size: 36px;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: lowercase;
+      padding-bottom: 1rem;
+      border-bottom: 2px solid black;
+    }
+    div {
+      width: 250px;
+    }
+    button {
+      margin: 1rem 0;
+      width: 50%;
+    }
+  }
   `,
   shadow: css`
     position: fixed;
