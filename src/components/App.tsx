@@ -3,15 +3,16 @@ import styles from "../styles/styles";
 import {
   Tetro,
   TetroType,
-  rotationOrigins,
   ColorTheme,
   Themes,
   Grid,
   MoveType,
+  Styles,
 } from "../templates/Tetromino";
 import {
   checkGrid,
   checkMove,
+  checkRotate,
   generateDefaultTetromino,
   rotateTetromino,
   getDirectionShift,
@@ -73,17 +74,22 @@ const App = () => {
     );
   }, [theme]);
 
+  const handleChangeTheme = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const theme = Number(e.target.value);
+    setTheme(theme);
+  };
+
   //////////////Movement and Rotation Checks
   //Check to see if any rows are complete
   const checkRows = useCallback(
     (grid: Grid) => {
-      const gridCheck = checkGrid(grid, score);
+      const gridCheck = checkGrid(grid, level);
       if (gridCheck[2] > 0) {
         setScore(score + gridCheck[1]);
         setLevelProgress(levelProgress + gridCheck[2]);
         if ((levelProgress + gridCheck[2]) / level >= 10) {
           setLevel(level + 1);
-          setDropTiming(dropTiming - dropTiming * 0.2);
+          setDropTiming(dropTiming - dropTiming * 0.3);
         }
       }
 
@@ -136,66 +142,6 @@ const App = () => {
     [grid, tetromino, checkRows]
   );
 
-  ///Type for Rotate return object
-  type RotateCheckReturn = {
-    moveType: MoveType;
-    numOfMoves: number;
-  };
-
-  ///Checks if/when tetro has rotated whether or not
-  //the new coords are occupied and returns direction it must move and number of spaces
-  const checkOccupiedRotate: (
-    ///////////////////////////////////////////////////Refactor this
-    newCoords: [number, number][]
-  ) => RotateCheckReturn | undefined = useCallback(
-    (newCoords: [number, number][]) => {
-      let hitOccupied = null; ///matrix that is hit(if there is one)
-      let maxX = 0; /// Max number of matrix on x axis beyond occupied
-      let maxY = 0; /// Max number of matrix on y axis beyond occupied
-      //loop through new coords for rotation
-      for (let i = 0; i < newCoords.length; i++) {
-        const [x, y] = newCoords[i];
-        //Change maxX/Y if less than x,y for this tetro block
-        maxX < x && (maxX = x);
-        maxY < y && (maxY = y);
-        //If matrix is occupied on grid and hitOccupied is undefined
-        if (Boolean(grid[x][y]) && !hitOccupied) {
-          hitOccupied = [x, y];
-        }
-      }
-      //If no occupied matrix exit function
-      if (!hitOccupied!) return;
-      //Get x / y coords of rotation origin
-      let [xa, ya] = newCoords[rotationOrigins[tetromino.type]];
-      //If occupied matrix figure out if tetro can be moved
-      if (hitOccupied) {
-        //deconstruct x /y of first occupied matrix
-        let [x, y] = hitOccupied;
-        //Default return value for rotation
-        const rotatecheck: RotateCheckReturn = {
-          moveType: "none",
-          numOfMoves: 0,
-        };
-        ///Check which direction tetro needs to move + how far to move from occupied space
-        if (xa - x > 0) {
-          rotatecheck.moveType = "down";
-          rotatecheck.numOfMoves = newCoords.length - Math.abs(x - maxX);
-        } else if (xa - x < 0) {
-          rotatecheck.moveType = "up";
-          rotatecheck.numOfMoves = Math.abs(maxX - x) + 1;
-        } else if (ya - y > 0) {
-          rotatecheck.moveType = "right";
-          rotatecheck.numOfMoves = newCoords.length - Math.abs(y - maxY);
-        } else if (ya - y < 0) {
-          rotatecheck.moveType = "left";
-          rotatecheck.numOfMoves = Math.abs(y - maxY) + 1;
-        }
-        return rotatecheck;
-      }
-    },
-    [grid, tetromino]
-  );
-
   //Default Function for Tetro rotate
   const rotate = useCallback(() => {
     //Squares don't rotate...duh
@@ -218,7 +164,7 @@ const App = () => {
         }));
       }
       //Check if is space is an occupied space, get back direction the news coords need to shift and number of moves in object form { moveType: MoveType; numOfMoves: number;}
-      let matrixCheck = checkOccupiedRotate(newCoords);
+      let matrixCheck = checkRotate(newCoords, grid, tetromino);
       if (matrixCheck) {
         //If matrix returns an object containing moves and direction, point to new coords using moveTetro function.
         let finalRotatedCoords = moveTetro(
@@ -239,7 +185,7 @@ const App = () => {
       ...tetro,
       coords: newCoords,
     }));
-  }, [checkOccupiedRotate, grid, tetromino]);
+  }, [grid, tetromino]);
 
   ////////////Games Session Functions
 
@@ -273,16 +219,19 @@ const App = () => {
     /////////////////////////////////!!!!! REFACTOR !!!!!!////////////////////////////////////////////////
     /**** START HERE ****/
     //Fix L drops
-
+    const { coords } = tetromino;
     let checkCol = false;
     for (let i = 0; i < grid.length; i++) {
+      //Loop through grid
       let checkRow = grid[i].some((matrix) => Boolean(matrix));
+      //Check each row
       if (checkRow) {
-        for (let j = 0; j < tetromino.coords.length; j++) {
-          checkCol = Boolean(grid[i][tetromino.coords[j][1]]);
+        //If a row has an occupied space loop through coords to see if any of the tetro coords are in the same col
+        for (let j = 0; j < coords.length; j++) {
+          checkCol = Boolean(grid[i][coords[j][1]]);
           if (checkCol) {
-            let moves = i - tetromino.coords[j][0];
-            const { coords } = tetromino;
+            if (i < coords[j][0]) return;
+            let moves = i - coords[j][0] - 1;
             // get new coords by mapping through current coords
             let newCoords = moveTetro(coords, "down", moves);
             if (checkMove(newCoords, grid) > 0) {
@@ -304,7 +253,7 @@ const App = () => {
         }
       }
     }
-
+    //If no part of the grid below is occupied this will run
     if (!checkCol) {
       const { coords } = tetromino;
       let max = Math.max(...tetromino.coords.map((matrix) => matrix[0]));
@@ -360,100 +309,124 @@ const App = () => {
       document.removeEventListener("keyup", handleKeyUp, false);
     };
   }, [move, rotate, dropTetro, session]);
+
   ////////////////////////////////////////////////////////////////////////////////Ask Ferdy about passing functions into dependency array
   return (
-    <div className={styles.gameContainer}>
-      <div className={styles.gameInfo}>
-        {preview && (
-          <div className={styles.gamePreview}>
-            {preview.map((tetro: Tetro, index: number) => {
-              const newArr = Array(8).fill(1);
-              return (
-                <div key={index} className={styles.tetroPrev}>
-                  <div
-                    className={
-                      TetroType[tetro.type].toLowerCase() + "  tetro-prev-grid"
-                    }
-                  >
-                    {newArr.map((item, index) => (
-                      <div
-                        style={{
-                          background: `${
-                            ColorTheme[Themes.ColorTheme1][tetro.type]
-                          }`,
-                        }}
-                        key={index}
-                      ></div>
-                    ))}
+    <div className={styles[ColorTheme[theme][Styles.Body]]}>
+      <div className={styles.gameContainer + ` game-container`}>
+        <div className={styles.gameInfo + ` info-box`}>
+          {preview && (
+            <div className={styles.gamePreview + ` game-preview`}>
+              {preview.map((tetro: Tetro, index: number) => {
+                const newArr = Array(8).fill(1);
+                return (
+                  <div key={index} className={styles.tetroPrev}>
+                    <div
+                      className={
+                        TetroType[tetro.type].toLowerCase() +
+                        "  tetro-prev-grid"
+                      }
+                    >
+                      {newArr.map((item, index) => (
+                        <div
+                          style={{
+                            background: `${ColorTheme[theme][tetro.type]}`,
+                          }}
+                          key={index}
+                        ></div>
+                      ))}
+                    </div>
                   </div>
+                );
+              })}
+            </div>
+          )}
+          <div
+            className={styles.gameInfoTextContain + " game-info-text-contain"}
+          >
+            <p className={styles.gameInfoText}>
+              Score: <span>{score}</span>
+            </p>
+          </div>
+          <div
+            className={styles.gameInfoTextContain + " game-info-text-contain"}
+          >
+            <p className={styles.gameInfoText}>
+              Level: <span>{level}</span>
+            </p>
+          </div>
+          <div
+            className={styles.gameInfoTextContain + " game-info-text-contain"}
+          >
+            <p className={styles.gameInfoText}>
+              lines: <span>{levelProgress}</span>
+            </p>
+          </div>
+          {session !== "play" && (
+            <div className={styles.gameInfoTextContain + " theme-changer"}>
+              <label htmlFor={"theme-change"}>Change Theme</label>
+              <select name="theme-change" onChange={handleChangeTheme}>
+                <option value="0">Default</option>
+                <option value="1">Pastel</option>
+                <option value="2">Fall</option>
+                <option value="3">Classic</option>
+                <option value="4">Midnight</option>
+              </select>
+            </div>
+          )}
+        </div>
+        <div
+          className={
+            styles.grid + `${session !== "" ? " on" : " off"} game-grid`
+          }
+        >
+          {session !== "" ? (
+            grid.map((row, gridX) => {
+              return (
+                <div className={styles.row} key={gridX}>
+                  {row.map((matrix, gridY) => {
+                    const isOccupied =
+                      Boolean(matrix) ||
+                      tetromino.coords.some(
+                        ([tetrominoX, tetrominoY]) =>
+                          tetrominoX === gridX && tetrominoY === gridY
+                      );
+                    return (
+                      <div
+                        className={styles.matrix}
+                        key={gridY}
+                        style={
+                          isOccupied
+                            ? {
+                                background: `${
+                                  grid[gridX][gridY] === 0
+                                    ? tetromino.color
+                                    : grid[gridX][gridY].color
+                                }`,
+                              }
+                            : undefined
+                        }
+                      ></div>
+                    );
+                  })}
                 </div>
               );
-            })}
+            })
+          ) : (
+            <button onClick={startGame}>Start Game</button>
+          )}
+        </div>
+        {session === "game over" && (
+          <div className={styles.game_cover_modal}>
+            <p>Game Over</p>
+            <div>
+              <button onClick={clearGame}>home</button>
+              <button onClick={startGame}>Start Over</button>
+            </div>
           </div>
         )}
-        <div className={styles.gameInfoTextContain}>
-          <p className={styles.gameInfoText}>
-            Score: <span>{score}</span>
-          </p>
-        </div>
-        <div className={styles.gameInfoTextContain}>
-          <p className={styles.gameInfoText}>
-            Level: <span>{level}</span>
-          </p>
-        </div>
-        <div className={styles.gameInfoTextContain}>
-          <p className={styles.gameInfoText}>
-            lines: <span>{levelProgress}</span>
-          </p>
-        </div>
+        {session === "game over" && <div className={styles.shadow}></div>}
       </div>
-      <div className={styles.grid + `${session !== "" ? " on" : " off"}`}>
-        {session !== "" ? (
-          grid.map((row, gridX) => {
-            return (
-              <div className={styles.row} key={gridX}>
-                {row.map((matrix, gridY) => {
-                  const isOccupied =
-                    Boolean(matrix) ||
-                    tetromino.coords.some(
-                      ([tetrominoX, tetrominoY]) =>
-                        tetrominoX === gridX && tetrominoY === gridY
-                    );
-                  return (
-                    <div
-                      className={styles.matrix}
-                      key={gridY}
-                      style={
-                        isOccupied
-                          ? {
-                              background: `${
-                                grid[gridX][gridY] === 0
-                                  ? tetromino.color
-                                  : grid[gridX][gridY].color
-                              }`,
-                            }
-                          : undefined
-                      }
-                    ></div>
-                  );
-                })}
-              </div>
-            );
-          })
-        ) : (
-          <button onClick={startGame}>Start Game</button>
-        )}
-      </div>
-      {session === "game over" && (
-        <div className={styles.game_cover_modal}>
-          <p>Game Over</p>
-          <div>
-            <button onClick={clearGame}>home</button>
-            <button onClick={startGame}>Start Over</button>
-          </div>
-        </div>
-      )}
-      {session === "game over" && <div className={styles.shadow}></div>}
     </div>
   );
 };

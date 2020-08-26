@@ -20,6 +20,10 @@ export type Grid = any[][];
 //Themes Enum
 export enum Themes {
   ColorTheme1,
+  ColorTheme2,
+  ColorTheme3,
+  ColorTheme4,
+  ColorTheme5,
 }
 
 export enum Styles { /// For style purposes
@@ -45,11 +49,59 @@ const ColorTheme1 = {
   [Styles.Leg]: "#3A86FF",
   [Styles.ReverseLeg]: "#0096D2",
   [Styles.ReverseSnake]: "#00ECB7",
-  [Styles.Body]: "theme-1",
+  [Styles.Body]: "#f0f2df",
+} as Record<Styles, string>;
+
+const ColorTheme2 = {
+  [Styles.Line]: "#D93B48",
+  [Styles.Snake]: "#104D73",
+  [Styles.Square]: "#32838C",
+  [Styles.Tee]: "#d9b93b",
+  [Styles.Leg]: "#D95F43",
+  [Styles.ReverseLeg]: "#db9840",
+  [Styles.ReverseSnake]: "#107370",
+  [Styles.Body]: "themeTwo",
+} as Record<Styles, string>;
+
+const ColorTheme3 = {
+  [Styles.Line]: "#4D5D73",
+  [Styles.Snake]: "#3D5914",
+  [Styles.Square]: "#A68F72",
+  [Styles.Tee]: "#D96523",
+  [Styles.Leg]: "#A6360D",
+  [Styles.ReverseLeg]: "#A2352E",
+  [Styles.ReverseSnake]: "#383E33",
+  [Styles.Body]: "themeThree",
+} as Record<Styles, string>;
+
+const ColorTheme4 = {
+  [Styles.Line]: "#0F3965",
+  [Styles.Snake]: "#0F3965",
+  [Styles.Square]: "#0F3965",
+  [Styles.Tee]: "#0F3965",
+  [Styles.Leg]: "#0F3965",
+  [Styles.ReverseLeg]: "#0F3965",
+  [Styles.ReverseSnake]: "#0F3965",
+  [Styles.Body]: "themeFour",
+} as Record<Styles, string>;
+
+const ColorTheme5 = {
+  [Styles.Line]: "#590222",
+  [Styles.Snake]: "#73024B",
+  [Styles.Square]: "#BF047E",
+  [Styles.Tee]: "#04C4D9",
+  [Styles.Leg]: "#F25F29",
+  [Styles.ReverseLeg]: "#F2C230",
+  [Styles.ReverseSnake]: "#F21905",
+  [Styles.Body]: "themeFive",
 } as Record<Styles, string>;
 
 export const ColorTheme = {
   [Themes.ColorTheme1]: ColorTheme1,
+  [Themes.ColorTheme2]: ColorTheme2,
+  [Themes.ColorTheme3]: ColorTheme3,
+  [Themes.ColorTheme4]: ColorTheme4,
+  [Themes.ColorTheme5]: ColorTheme5,
 } as Record<Themes, {}>;
 
 //Type for Tetromino Coords

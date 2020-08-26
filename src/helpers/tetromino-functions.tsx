@@ -114,6 +114,66 @@ export function checkMove(coords: [number, number][], grid: number[][]) {
   return numOutOfBounds;
 }
 
+///Type for Rotate return object
+type RotateCheckReturn = {
+  moveType: MoveType;
+  numOfMoves: number;
+};
+
+///Checks if/when tetro has rotated whether or not
+//the new coords are occupied and returns direction it must move and number of spaces
+
+export const checkRotate: (
+  ///////////////////////////////////////////////////Refactor this
+  newCoords: [number, number][],
+  grid: Grid,
+  tetromino: Tetro
+) => RotateCheckReturn | undefined = (newCoords, grid, tetromino) => {
+  let hitOccupied = null; ///matrix that is hit(if there is one)
+  let maxX = 0; /// Max number of matrix on x axis beyond occupied
+  let maxY = 0; /// Max number of matrix on y axis beyond occupied
+  //loop through new coords for rotation
+  for (let i = 0; i < newCoords.length; i++) {
+    const [x, y] = newCoords[i];
+    //Change maxX/Y if less than x,y for this tetro block
+    maxX < x && (maxX = x);
+    maxY < y && (maxY = y);
+    //If matrix is occupied on grid and hitOccupied is undefined
+    if (Boolean(grid[x][y]) && !hitOccupied) {
+      hitOccupied = [x, y];
+    }
+  }
+  //If no occupied matrix exit function
+  if (!hitOccupied!) return;
+  //Get x / y coords of rotation origin
+  let [xa, ya] = newCoords[rotationOrigins[tetromino.type]];
+  //If occupied matrix figure out if tetro can be moved
+  if (hitOccupied) {
+    //deconstruct x /y of first occupied matrix
+    let [x, y] = hitOccupied;
+    //Default return value for rotation
+    const rotatecheck: RotateCheckReturn = {
+      moveType: "none",
+      numOfMoves: 0,
+    };
+    ///Check which direction tetro needs to move + how far to move from occupied space
+    if (xa - x > 0) {
+      rotatecheck.moveType = "down";
+      rotatecheck.numOfMoves = newCoords.length - Math.abs(x - maxX);
+    } else if (xa - x < 0) {
+      rotatecheck.moveType = "up";
+      rotatecheck.numOfMoves = Math.abs(maxX - x) + 1;
+    } else if (ya - y > 0) {
+      rotatecheck.moveType = "right";
+      rotatecheck.numOfMoves = newCoords.length - Math.abs(y - maxY);
+    } else if (ya - y < 0) {
+      rotatecheck.moveType = "left";
+      rotatecheck.numOfMoves = Math.abs(y - maxY) + 1;
+    }
+    return rotatecheck;
+  }
+};
+
 ///Find direction tetromino needs to shift if it rotates out of the bounds of the grid
 export const getDirectionShift = (coords: [number, number][]) => {
   for (let i = 0; i < coords.length; i++) {
