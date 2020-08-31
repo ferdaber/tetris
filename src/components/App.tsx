@@ -234,8 +234,8 @@ const App = () => {
     setSession("");
     setQueue(null);
     setGrid(Array.from({ length: 20 }, () => Array(10).fill(0)));
-    setLevel(5);
-    setLevelProgress(59);
+    setLevel(DEFAULT_LEVEL);
+    setLevelProgress(DEFAULT_LEVEL_PROGRESS);
     setScore(DEFAULT_SCORE);
     setTetromino(DEFAULT_TETROMINO);
     setDropTiming(DEFAULT_DROP_TIMING);
