@@ -45,8 +45,10 @@ const App = () => {
   const [session, setSession] = useState<GameMode>("");
   const [score, setScore] = useState<number>(DEFAULT_SCORE);
   const [level, setLevel] = useState<number>(DEFAULT_LEVEL);
-  const [preview, setPreview] = useState<Tetro[] | null>(null);
+  const [bag, setBag] = useState<Tetro[] | []>([]);
+  const [queue, setQueue] = useState<Tetro[] | null>(null);
   const [dropTiming, setDropTiming] = useState(DEFAULT_DROP_TIMING);
+  const [reserve, setReserve] = useState<number[] | null>(null);
   const [levelProgress, setLevelProgress] = useState<number>(
     DEFAULT_LEVEL_PROGRESS
   );
@@ -66,13 +68,30 @@ const App = () => {
   );
 
   //Select random Tetromino
-  const getRandomTetroType: () => Tetro = useCallback(() => {
-    let getTetro = TetroType[Math.floor(Math.random() * Math.floor(7))];
-    return generateDefaultTetromino(
-      TetroType[getTetro],
-      ColorTheme[theme][TetroType[getTetro]]
-    );
-  }, [theme]);
+  const fillBag: (refillingBag: Tetro[]) => void = useCallback(
+    (refillingBag) => {
+      console.log(refillingBag);
+      if (refillingBag.length > 6) {
+        setBag(refillingBag);
+        return;
+      }
+      let getTetro = TetroType[Math.floor(Math.random() * Math.floor(7))];
+      let newTetro = generateDefaultTetromino(
+        TetroType[getTetro],
+        ColorTheme[theme][TetroType[getTetro]]
+      );
+      if (refillingBag.some((tetro) => tetro.type === newTetro.type)) {
+        return fillBag(refillingBag);
+      }
+      refillingBag.push(newTetro);
+      return fillBag(refillingBag);
+    },
+    [theme]
+  );
+
+  useEffect(() => {
+    fillBag([]);
+  }, [fillBag]);
 
   const handleChangeTheme = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const theme = Number(e.target.value);
@@ -81,7 +100,7 @@ const App = () => {
 
   //////////////Movement and Rotation Checks
   //Check to see if any rows are complete
-  const checkRows = useCallback(
+  const checkFinalPlacement = useCallback(
     (grid: Grid) => {
       const gridCheck = checkGrid(grid, level);
       if (gridCheck[2] > 0) {
@@ -94,7 +113,7 @@ const App = () => {
       }
 
       setTetromino(() => {
-        let newTetro = preview![0];
+        let newTetro = queue![0];
         let checkGameOver = checkMove(newTetro.coords, gridCheck[0]);
         if (checkGameOver > 0) {
           setSession("game over");
@@ -103,12 +122,18 @@ const App = () => {
           return newTetro;
         }
       });
-      let newPreview = preview!.slice(1, 3);
-      newPreview.push(getRandomTetroType());
-      setPreview(newPreview);
+      let newPreview = queue!.slice(1, 3);
+      let filledbag = bag.slice();
+      let newTetro = filledbag.pop();
+      newPreview.push(newTetro!);
+      setBag(filledbag);
+      if (filledbag.length === 0) {
+        fillBag([]);
+      }
+      setQueue(newPreview);
       setGrid(gridCheck[0]);
     },
-    [level, levelProgress, dropTiming, preview, score, getRandomTetroType]
+    [level, levelProgress, dropTiming, queue, score, bag, fillBag]
   );
 
   ////Default Tetro Move
@@ -129,7 +154,7 @@ const App = () => {
             newGrid[x][y] = { color: tetromino.color };
           });
 
-          return checkRows(newGrid);
+          return checkFinalPlacement(newGrid);
         }
         prevTetroCoords.current = tetromino.coords;
       }
@@ -139,8 +164,22 @@ const App = () => {
         coords: newCoords,
       }));
     },
-    [grid, tetromino, checkRows]
+    [grid, tetromino, checkFinalPlacement]
   );
+
+  ///Set/Swap reserve tetro
+  const swapReserve = useCallback(() => {
+    if (reserve) {
+      let currentTetro = tetromino.type;
+      setTetromino(
+        generateDefaultTetromino(reserve[0], ColorTheme[theme][reserve[0]])
+      );
+      setReserve([currentTetro]);
+    } else {
+      setReserve([tetromino.type]);
+      checkFinalPlacement(grid);
+    }
+  }, [grid, checkFinalPlacement, tetromino, reserve, theme]);
 
   //Default Function for Tetro rotate
   const rotate = useCallback(() => {
@@ -192,36 +231,39 @@ const App = () => {
   //Clear Game function
   const clearGame = () => {
     setSession("");
-    setPreview(null);
+    setQueue(null);
     setGrid(Array.from({ length: 20 }, () => Array(10).fill(0)));
     setLevel(DEFAULT_LEVEL);
     setLevelProgress(DEFAULT_LEVEL_PROGRESS);
     setScore(DEFAULT_SCORE);
     setTetromino(DEFAULT_TETROMINO);
     setDropTiming(DEFAULT_DROP_TIMING);
+    fillBag([]);
   };
 
   //Start Game function
   const startGame = () => {
     clearGame();
-    setTetromino(getRandomTetroType());
+    let filledbag = bag.slice();
+    let firstTetro = filledbag.pop();
+    let preview = filledbag.splice(filledbag.length - 3, 3);
+    setBag(filledbag);
+    setTetromino(firstTetro!);
     setSession("play");
-    setPreview([
-      getRandomTetroType(),
-      getRandomTetroType(),
-      getRandomTetroType(),
-    ]);
+    setQueue(preview);
   };
 
   ////////////Key Press Functions
 
-  const dropTetro = useCallback(() => {
+  const dropTetro = useCallback(async () => {
     /////////////////////////////////!!!!! REFACTOR !!!!!!////////////////////////////////////////////////
     /**** START HERE ****/
     //Fix L drops
     const { coords } = tetromino;
     let checkCol = false;
-    for (let i = 0; i < grid.length; i++) {
+    //Start Loop at lowest X coord. Allows for drops under hanging tetros
+    let firstRow = Math.min(...coords.map((matrix) => matrix[0]));
+    for (let i = firstRow; i < grid.length; i++) {
       //Loop through grid
       let checkRow = grid[i].some((matrix) => Boolean(matrix));
       //Check each row
@@ -238,17 +280,17 @@ const App = () => {
               let max = Math.max(
                 ...newCoords.map((matrix: [number, number]) => matrix[0])
               );
-              //let firstRow = Math.min(...newCoords.map((matrix) => matrix[0]));
               let difference = max - i;
               newCoords = moveTetro(newCoords, "up", difference);
               if (checkMove(newCoords, grid) > 0) {
                 newCoords = moveTetro(newCoords, "up", 1);
               }
             }
-            return setTetromino((tetro) => ({
-              ...tetro,
-              coords: newCoords,
-            }));
+            let newGrid = grid.slice();
+            newCoords.forEach(([x, y]) => {
+              newGrid[x][y] = { color: tetromino.color };
+            });
+            return checkFinalPlacement(newGrid);
           }
         }
       }
@@ -259,13 +301,14 @@ const App = () => {
       let max = Math.max(...tetromino.coords.map((matrix) => matrix[0]));
       let moves = grid.length - max - 1;
       let newCoords = moveTetro(coords, "down", moves);
-      return setTetromino((tetro) => ({
-        ...tetro,
-        coords: newCoords,
-      }));
+      let newGrid = grid.slice();
+      newCoords.forEach(([x, y]) => {
+        newGrid[x][y] = { color: tetromino.color };
+      });
+      return checkFinalPlacement(newGrid);
     }
     //}
-  }, [tetromino, grid]);
+  }, [tetromino, grid, checkFinalPlacement]);
 
   //Add keydown event listeners
   useEffect(() => {
@@ -290,6 +333,10 @@ const App = () => {
           e.preventDefault();
           move("right");
           break;
+        case "Shift":
+          e.preventDefault();
+          swapReserve();
+          break;
         case " ":
           e.preventDefault();
           dropTetro();
@@ -308,16 +355,49 @@ const App = () => {
       document.removeEventListener("keydown", handleKeyPress, false);
       document.removeEventListener("keyup", handleKeyUp, false);
     };
-  }, [move, rotate, dropTetro, session]);
+  }, [
+    move,
+    rotate,
+    dropTetro,
+    session,
+    grid,
+    checkFinalPlacement,
+    swapReserve,
+  ]);
 
   ////////////////////////////////////////////////////////////////////////////////Ask Ferdy about passing functions into dependency array
   return (
     <div className={styles[ColorTheme[theme][Styles.Body]]}>
       <div className={styles.gameContainer + ` game-container`}>
         <div className={styles.gameInfo + ` info-box`}>
-          {preview && (
-            <div className={styles.gamePreview + ` game-preview`}>
-              {preview.map((tetro: Tetro, index: number) => {
+          {reserve && (
+            <div className={styles.gamePreview + ` game-queue`}>
+              {reserve.map((type, index: number) => {
+                const newArr = Array(8).fill(1);
+                return (
+                  <div key={index} className={styles.tetroPrev}>
+                    <div
+                      className={
+                        TetroType[type].toLowerCase() + "  tetro-prev-grid"
+                      }
+                    >
+                      {newArr.map((item, index) => (
+                        <div
+                          style={{
+                            background: `${ColorTheme[theme][type]}`,
+                          }}
+                          key={index}
+                        ></div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+          {queue && (
+            <div className={styles.gamePreview + ` game-queue`}>
+              {queue.map((tetro: Tetro, index: number) => {
                 const newArr = Array(8).fill(1);
                 return (
                   <div key={index} className={styles.tetroPrev}>
@@ -374,6 +454,19 @@ const App = () => {
               </select>
             </div>
           )}
+          <div
+            className={
+              styles.gameInfoTextContain +
+              " game-info-text-contain instructions"
+            }
+          >
+            <p>Up - Rotate</p>
+            <p>Down - Move Down</p>
+            <p>Left - Move Left</p>
+            <p>Right- Move Right</p>
+            <p>Space - Drop</p>
+            <p>Shift - Reserve</p>
+          </div>
         </div>
         <div
           className={

@@ -194,6 +194,11 @@ export default {
   gameInfoTextContain: css`
     padding: 1rem 1.5rem;
     text-transform: lowercase;
+    &.instructions {
+      p {
+        margin-bottom: 7px;
+      }
+    }
   `,
   gameInfoText: css`
     font-size: 24px;

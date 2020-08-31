@@ -42,13 +42,13 @@ export enum Styles { /// For style purposes
 
 //Color Themes
 const ColorTheme1 = {
-  [Styles.Line]: "#FFBE0B",
-  [Styles.Snake]: "#FB5607",
-  [Styles.Square]: "#FF006E",
-  [Styles.Tee]: "#8338EC",
-  [Styles.Leg]: "#3A86FF",
-  [Styles.ReverseLeg]: "#0096D2",
-  [Styles.ReverseSnake]: "#00ECB7",
+  [Styles.Line]: "#01f1f2",
+  [Styles.Snake]: "#02f102",
+  [Styles.Square]: "#f8e608",
+  [Styles.Tee]: "#a001f1",
+  [Styles.Leg]: "#ef8201",
+  [Styles.ReverseLeg]: "#0100f1",
+  [Styles.ReverseSnake]: "#f00001",
   [Styles.Body]: "#f0f2df",
 } as Record<Styles, string>;
 
