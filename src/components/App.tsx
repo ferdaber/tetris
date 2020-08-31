@@ -70,7 +70,6 @@ const App = () => {
   //Select random Tetromino
   const fillBag: (refillingBag: Tetro[]) => void = useCallback(
     (refillingBag) => {
-      console.log(refillingBag);
       if (refillingBag.length > 6) {
         setBag(refillingBag);
         return;
@@ -106,9 +105,11 @@ const App = () => {
       if (gridCheck[2] > 0) {
         setScore(score + gridCheck[1]);
         setLevelProgress(levelProgress + gridCheck[2]);
-        if ((levelProgress + gridCheck[2]) / level >= 10) {
+        if (levelProgress + gridCheck[2] >= 10 * (level + 1)) {
           setLevel(level + 1);
-          setDropTiming(dropTiming - dropTiming * 0.3);
+          let first = (level + 1) * 0.0007;
+          let timing = 0.8 - first;
+          setDropTiming(Math.pow(timing, level + 1) * 1000);
         }
       }
 
@@ -133,7 +134,7 @@ const App = () => {
       setQueue(newPreview);
       setGrid(gridCheck[0]);
     },
-    [level, levelProgress, dropTiming, queue, score, bag, fillBag]
+    [level, levelProgress, queue, score, bag, fillBag]
   );
 
   ////Default Tetro Move
@@ -233,8 +234,8 @@ const App = () => {
     setSession("");
     setQueue(null);
     setGrid(Array.from({ length: 20 }, () => Array(10).fill(0)));
-    setLevel(DEFAULT_LEVEL);
-    setLevelProgress(DEFAULT_LEVEL_PROGRESS);
+    setLevel(5);
+    setLevelProgress(59);
     setScore(DEFAULT_SCORE);
     setTetromino(DEFAULT_TETROMINO);
     setDropTiming(DEFAULT_DROP_TIMING);
