@@ -16,7 +16,7 @@
   "license": "ISC",
   "dependencies": {
     "core-js": "^3.6.5",
-    "immer": "^6.0.3",
+    "immer": "^8.0.1",
     "lodash-es": "^4.17.15",
     "react": "^16.13.1",
     "react-dom": "^16.13.1"
